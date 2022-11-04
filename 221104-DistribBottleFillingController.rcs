@@ -1,0 +1,148 @@
+program BottleFillingController {
+ 
+clock 0t100ms; 
+
+input PortB 2 2 8;
+input PortC 3 2 8;
+output PortD 4 2 8;
+
+
+/*====== CONSTANTS =========*/
+const bool ON = true;
+const bool OFF = false;
+ 
+/*===== P1 VARIABLES =====*/
+bool iLowLevel = PortB[1];
+bool iHighLevel = PortB[1];
+bool oFillTank = PortD[1];
+ 
+/*===== P2 VARIABLES =====*/
+bool iLowTemp;
+bool iHighTemp;
+bool oSteam;
+ 
+/*===== P3 VARIABLES =====*/
+bool iBottleLevel;
+bool oFillBottle;
+ 
+/*===== P4 VARIABLES =====*/
+bool iBottlePosition;
+bool oConveyor;
+ 
+ 
+/* === Controller 1 ================ */
+process Initialization {  
+  state Begin { 
+    start process TankFilling;
+    set next state;     
+  }
+  state WaitForFilling { 
+    if (process TankFilling in state inactive) {
+      start process ForcedSterilization;
+      set next state;     
+    } 
+  }
+  state WaitForSterilization { 
+    if (process ForcedSterilization in state inactive) {
+      start process KeepSterilization;
+      start process MainLoop;
+      stop; 
+    } 
+  }  
+} /* END OF PROCESS */
+ 
+process MainLoop {  
+  state Begin { 
+    start process NextBottle;
+    set next state; 
+  }
+  state WaitForNextBottle {
+    if (process NextBottle in state inactive) 
+      start process BottleFilling;
+      set next state; 
+  }  
+  state WaitForFilling {
+    if (process BottleFilling in state inactive) { 
+      if (iLowLevel == OFF) { // no liquid
+        stop process KeepSterilization;
+        start process Initialization;
+        stop;
+      } else {
+        restart;
+      }
+    }  
+  }
+}  
+ 
+process TankFilling {  
+  state Begin { 
+    if (iHighLevel != ON) { // is not filled
+      oFillTank = ON;
+    }  
+    set next state;     
+  }
+  state TankFilled { 
+    if (iHighLevel == ON) {
+      oFillTank = OFF;
+      stop; 
+    } 
+  }    
+} /* END OF PROCESS */
+ 
+/* === Controller 2 ================ */
+process ForcedSterilization { 
+  state HeatUp { 
+    oSteam = ON;
+    if (iHighTemp == ON) {
+      set next state;
+    } 
+  }
+  state SterilizationFor1min { 
+    timeout (0t1m) {
+      oSteam = OFF;
+      stop; 
+    } 
+  }
+} /* END OF PROCESS */
+ 
+process KeepSterilization { 
+  state WaitLowTemp { 
+    if (iLowTemp != ON) {
+      oSteam = ON;
+      set next state;
+    }  
+  }
+  state WaitHighTemp looped { 
+    if (iHighTemp == ON) {
+      oSteam = OFF;
+      restart; 
+    } 
+  }
+} /* END OF PROCESS */
+ 
+/* === Controller 3 ====== */
+process BottleFilling { 
+  state Begin { 
+    oFillBottle = ON;
+    if (iBottleLevel == ON) {
+      oFillBottle = OFF;
+      stop; 
+    } 
+  }  
+} /* END OF PROCESS */
+
+/* === Controller 4 ================ */
+process NextBottle { 
+  state Begin { 
+    oConveyor = ON;
+    if (iBottlePosition != ON) // push current bottle
+      set next state;
+  }    
+  state WaitBottlePosition { 
+    if (iBottlePosition == ON) {
+      oConveyor = OFF;
+      stop;
+    }
+  }
+} /* END OF PROCESS */
+} /* END OF PROGRAM */
