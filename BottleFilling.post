@@ -1,6 +1,6 @@
+(* to compile the code use the poST webIDE on post.iae.nsk.su *)
 PROGRAM BottleFillingController 
   
-/*===== P1 VARIABLES =====*/
     VAR_INPUT
         iLowLevel  : BOOL;
         iHighLevel  : BOOL;
@@ -9,7 +9,6 @@ PROGRAM BottleFillingController
         oFillTank : BOOL;
     END_VAR
 
-/*===== P2 VARIABLES =====*/
     VAR_INPUT
         iLowTemp  : BOOL;
     	iHighTemp  : BOOL;
@@ -18,7 +17,6 @@ PROGRAM BottleFillingController
         oSteam : BOOL;
     END_VAR
 
-/*===== P3 VARIABLES =====*/
     VAR_INPUT
 	iBottleLevel  : BOOL;
     END_VAR
@@ -26,7 +24,6 @@ PROGRAM BottleFillingController
         oFillBottle : BOOL;
     END_VAR
 
-/*===== P4 VARIABLES =====*/
     VAR_INPUT
 	iBottlePosition  : BOOL;
     END_VAR
@@ -35,16 +32,6 @@ PROGRAM BottleFillingController
         oConveyor : BOOL;
     END_VAR
 
-/*====== CONSTANTS =========*/
-
-//    VAR CONSTANT
-//        OFF : BOOL := FALSE;
-//        ON : BOOL := TRUE;
-//    END_VAR
-
-
-
-/* === Controller 1 ================ */
 PROCESS Initialization
     STATE Begin  
         START PROCESS TankFilling;
@@ -104,7 +91,6 @@ PROCESS TankFilling
     END_STATE    
 END_PROCESS /* END OF PROCESS */
  
-/* === Controller 2 ================ */
 PROCESS ForcedSterilization 
     STATE HeatUp 
         oSteam := TRUE;
@@ -135,7 +121,6 @@ PROCESS KeepSterilization
     END_STATE
 END_PROCESS /* END OF PROCESS */
  
-/* === Controller 3 ====== */
 PROCESS BottleFilling 
     STATE Begin 
         oFillBottle := TRUE;
@@ -146,7 +131,6 @@ PROCESS BottleFilling
     END_STATE  
 END_PROCESS /* END OF PROCESS */
 
-/* === Controller 4 ================ */
 PROCESS NextBottle 
     STATE Begin 
         oConveyor := TRUE;
