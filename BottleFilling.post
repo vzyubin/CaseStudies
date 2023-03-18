@@ -1,0 +1,164 @@
+PROGRAM BottleFillingController 
+  
+/*===== P1 VARIABLES =====*/
+    VAR_INPUT
+        iLowLevel  : BOOL;
+        iHighLevel  : BOOL;
+    END_VAR
+    VAR_OUTPUT
+        oFillTank : BOOL;
+    END_VAR
+
+/*===== P2 VARIABLES =====*/
+    VAR_INPUT
+        iLowTemp  : BOOL;
+    	iHighTemp  : BOOL;
+    END_VAR
+    VAR_OUTPUT
+        oSteam : BOOL;
+    END_VAR
+
+/*===== P3 VARIABLES =====*/
+    VAR_INPUT
+	iBottleLevel  : BOOL;
+    END_VAR
+    VAR_OUTPUT
+        oFillBottle : BOOL;
+    END_VAR
+
+/*===== P4 VARIABLES =====*/
+    VAR_INPUT
+	iBottlePosition  : BOOL;
+    END_VAR
+
+    VAR_OUTPUT
+        oConveyor : BOOL;
+    END_VAR
+
+/*====== CONSTANTS =========*/
+
+//    VAR CONSTANT
+//        OFF : BOOL := FALSE;
+//        ON : BOOL := TRUE;
+//    END_VAR
+
+
+
+/* === Controller 1 ================ */
+PROCESS Initialization
+    STATE Begin  
+        START PROCESS TankFilling;
+        SET NEXT; 
+    END_STATE
+    STATE WaitForFilling 
+        IF (PROCESS TankFilling IN STATE INACTIVE) THEN
+            START PROCESS ForcedSterilization;
+            SET NEXT;     
+        END_IF
+    END_STATE
+    STATE WaitForSterilization 
+        IF (PROCESS ForcedSterilization IN STATE INACTIVE) THEN
+            START PROCESS KeepSterilization;
+            START PROCESS MainLoop;
+            STOP; 
+        END_IF 
+    END_STATE  
+END_PROCESS /* END OF PROCESS */
+ 
+PROCESS MainLoop  
+    STATE Begin 
+        START PROCESS NextBottle;
+        SET NEXT; 
+    END_STATE
+    STATE WaitForNextBottle 
+        IF (PROCESS NextBottle IN STATE INACTIVE) THEN
+            START PROCESS BottleFilling;
+            SET NEXT; 
+        END_IF 
+    END_STATE  
+    STATE WaitForFilling 
+        IF (PROCESS BottleFilling IN STATE INACTIVE) THEN
+            IF (iLowLevel =  FALSE) THEN // no liquid
+                STOP PROCESS KeepSterilization;
+                START PROCESS Initialization;
+                STOP;
+            ELSE 
+                RESTART;
+            END_IF 
+        END_IF 
+    END_STATE
+END_PROCESS  
+ 
+PROCESS TankFilling  
+    STATE Begin 
+        IF (iHighLevel <> TRUE) THEN // is not filled
+            oFillTank := TRUE;
+        END_IF 
+        SET NEXT;     
+    END_STATE
+    STATE TankFilled 
+        IF (iHighLevel = TRUE) THEN
+            oFillTank :=  FALSE;
+            STOP; 
+        END_IF 
+    END_STATE    
+END_PROCESS /* END OF PROCESS */
+ 
+/* === Controller 2 ================ */
+PROCESS ForcedSterilization 
+    STATE HeatUp 
+        oSteam := TRUE;
+        IF (iHighTemp = TRUE) THEN
+            SET NEXT;
+        END_IF 
+    END_STATE
+    STATE SterilizationFor1min 
+        TIMEOUT T#1m THEN
+            oSteam :=  FALSE;
+            STOP; 
+        END_TIMEOUT 
+    END_STATE
+END_PROCESS /* END OF PROCESS */
+ 
+PROCESS KeepSterilization 
+    STATE WaitLowTemp 
+        IF (iLowTemp <> TRUE) THEN
+            oSteam := TRUE;
+            SET NEXT;
+        END_IF 
+    END_STATE
+    STATE WaitHighTemp 
+        IF (iHighTemp = TRUE) THEN
+            oSteam :=  FALSE;
+            RESTART; 
+        END_IF 
+    END_STATE
+END_PROCESS /* END OF PROCESS */
+ 
+/* === Controller 3 ====== */
+PROCESS BottleFilling 
+    STATE Begin 
+        oFillBottle := TRUE;
+        IF (iBottleLevel = TRUE) THEN
+            oFillBottle :=  FALSE;
+            STOP; 
+        END_IF 
+    END_STATE  
+END_PROCESS /* END OF PROCESS */
+
+/* === Controller 4 ================ */
+PROCESS NextBottle 
+    STATE Begin 
+        oConveyor := TRUE;
+        IF (iBottlePosition <> TRUE) THEN// push current bottle
+            SET NEXT;
+        END_IF 
+    END_STATE    
+    STATE WaitBottlePosition 
+        IF (iBottlePosition = TRUE) THEN
+            oConveyor :=  FALSE;
+            STOP;
+        END_IF 
+    END_STATE
+END_PROCESS /* END OF PROCESS */
+END_PROGRAM
