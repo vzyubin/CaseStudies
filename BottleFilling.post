@@ -1,4 +1,4 @@
-(* to compile the code use the poST webIDE on post.iae.nsk.su *)
+(* to compile the code use the poST webIDE at post2st.iae.nsk.su or post.iae.nsk.su *)
 PROGRAM BottleFillingController 
   
     VAR_INPUT
